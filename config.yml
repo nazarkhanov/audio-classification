@@ -1,0 +1,32 @@
+dataset:
+  folder_path: dataset/audio/
+
+  annotations:
+    train_csv: dataset/train.csv
+    test_csv: dataset/test.csv
+    input: fname
+    target: label
+
+  normalize:
+    sample_rate: 8000
+    duration: 1
+
+runtime:
+  device: cpu
+  epochs: 100
+  learning_rate: 0.001
+
+  loader:
+    batch_size: 64
+    shuffle: false
+
+  transform:
+    name: mel
+    params:
+      n_fft: 1024
+      win_length: 512
+      hop_length: 512
+
+  model:
+    name: custom
+    params: null

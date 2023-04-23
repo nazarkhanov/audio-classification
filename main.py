@@ -21,7 +21,7 @@ class Device:
     @staticmethod
     def choose():
         global CONFIG
-        CONFIG_DEVICE = CONFIG['runtime']['device']
+        CONFIG_DEVICE = CONFIG['runtime'].get('device', None)
 
         if CONFIG_DEVICE != 'auto':
             return CONFIG_DEVICE

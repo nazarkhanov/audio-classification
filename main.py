@@ -2,6 +2,7 @@ import os
 import yaml
 import pandas as pd
 import torch as tf
+import torch.nn as nn
 import torchaudio as ta
 from tqdm import tqdm
 
@@ -79,7 +80,7 @@ class Dataset(tf.utils.data.Dataset):
         CONFIG_DURATION = CONFIG['dataset']['normalize']['duration']
 
         duration = CONFIG_SAMPLE_RATE * CONFIG_DURATION
-        signal = tf.nn.functional.pad(signal, (0, duration - signal.size()[1]))
+        signal = nn.functional.pad(signal, (0, duration - signal.size()[1]))
         signal = signal.to(DEVICE)
 
         return signal, sr
@@ -118,7 +119,7 @@ class Model:
 
     @staticmethod
     def loss():
-        return tf.nn.CrossEntropyLoss()
+        return nn.CrossEntropyLoss()
 
     @staticmethod
     def optimizer(model):
@@ -126,61 +127,61 @@ class Model:
         CONFIG_LEARNING_RATE = CONFIG['runtime']['learning_rate']
         return tf.optim.Adam(model.parameters(), lr=CONFIG_LEARNING_RATE)
 
-    class Model1(tf.nn.Module):
+    class Model1(nn.Module):
         def __init__(self):
             super().__init__()
 
-            self.conv1 = tf.nn.Sequential(
-                tf.nn.Conv2d(
+            self.conv1 = nn.Sequential(
+                nn.Conv2d(
                     in_channels=1,
                     out_channels=16,
                     kernel_size=3,
                     stride=1,
                     padding=2
                 ),
-                tf.nn.ReLU(),
-                tf.nn.MaxPool2d(kernel_size=2)
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=2)
             )
 
-            self.conv2 = tf.nn.Sequential(
-                tf.nn.Conv2d(
+            self.conv2 = nn.Sequential(
+                nn.Conv2d(
                     in_channels=16,
                     out_channels=32,
                     kernel_size=3,
                     stride=1,
                     padding=2
                 ),
-                tf.nn.ReLU(),
-                tf.nn.MaxPool2d(kernel_size=2)
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=2)
             )
 
-            self.conv3 = tf.nn.Sequential(
-                tf.nn.Conv2d(
+            self.conv3 = nn.Sequential(
+                nn.Conv2d(
                     in_channels=32,
                     out_channels=64,
                     kernel_size=3,
                     stride=1,
                     padding=2
                 ),
-                tf.nn.ReLU(),
-                tf.nn.MaxPool2d(kernel_size=2)
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=2)
             )
 
-            self.conv4 = tf.nn.Sequential(
-                tf.nn.Conv2d(
+            self.conv4 = nn.Sequential(
+                nn.Conv2d(
                     in_channels=64,
                     out_channels=128,
                     kernel_size=3,
                     stride=1,
                     padding=2
                 ),
-                tf.nn.ReLU(),
-                tf.nn.MaxPool2d(kernel_size=2)
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=2)
             )
 
-            self.flatten = tf.nn.Flatten()
-            self.linear = tf.nn.Linear(2304, 10)
-            self.softmax = tf.nn.Softmax(dim=1)
+            self.flatten = nn.Flatten()
+            self.linear = nn.Linear(2304, 10)
+            self.softmax = nn.Softmax(dim=1)
 
         def forward(self, data):
             x = self.conv1(data)
@@ -192,10 +193,10 @@ class Model:
             predictions = self.softmax(logits)
             return predictions
 
-    class Model2(tf.nn.Module):
+    class Model2(nn.Module):
         pass
 
-    class Model3(tf.nn.Module):
+    class Model3(nn.Module):
         pass
 
 

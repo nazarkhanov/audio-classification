@@ -9,6 +9,7 @@ from tqdm import tqdm
 
 CONFIG = None
 DEVICE = None
+TRANSFORM = None
 
 
 class Config:
@@ -87,18 +88,20 @@ class Dataset(tf.utils.data.Dataset):
 
     @staticmethod
     def transform(signal, sr):
-        global CONFIG, DEVICE
-        CONFIG_TRANSOFRM = CONFIG['runtime']['transform']['name']
+        global CONFIG, DEVICE, TRANSFORM
+        CONFIG_TRANSFORM = CONFIG['runtime']['transform']['name']
         CONFIG_KWARGS = CONFIG['runtime']['transform']['params'] or {}
 
-        if CONFIG_TRANSOFRM == 'mel':
-            transform = ta.transforms.MelSpectrogram(sample_rate=sr, **CONFIG_KWARGS)
-        elif CONFIG_TRANSOFRM == 'mfcc':
-            transform = ta.transforms.MFCC(sample_rate=sr, **CONFIG_KWARGS)
+        if CONFIG_TRANSFORM == 'mel':
+            if (TRANSFORM is None) or (type(TRANSFORM) is not ta.transforms.MelSpectrogram):
+                TRANSFORM = ta.transforms.MelSpectrogram(sample_rate=sr, **CONFIG_KWARGS).to(DEVICE)
+        elif CONFIG_TRANSFORM == 'mfcc':
+            if (TRANSFORM is None) or (type(TRANSFORM) is not ta.transforms.MFCC):
+                TRANSFORM = ta.transforms.MFCC(sample_rate=sr, **CONFIG_KWARGS).to(DEVICE)
         else:
             raise ValueError('Transform not found')
 
-        transform = transform.to(DEVICE)
+        transform = TRANSFORM
         signal = transform(signal)
 
         return signal
@@ -234,6 +237,7 @@ class AudioCNNClassifier:
     @staticmethod
     def train_single_epoch(model_obj, loss_fn, optimiser, train_batches):
         global DEVICE
+
         for x, y in train_batches:
             x, y = x.to(DEVICE), y.to(DEVICE)
 

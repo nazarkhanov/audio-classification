@@ -28,5 +28,5 @@ runtime:
       hop_length: 512
 
   model:
-    name: custom
+    name: vgg # vgg | net | alexnet
     params: null

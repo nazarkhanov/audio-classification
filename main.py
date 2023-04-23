@@ -131,8 +131,12 @@ class Model:
         global CONFIG
         CONFIG_MODEL = CONFIG['runtime']['model']['name']
 
-        if CONFIG_MODEL == 'custom':
-            model = Model.Model1(num_classes)
+        if CONFIG_MODEL == 'vgg':
+            model = Model.VGG(num_classes)
+        elif CONFIG_MODEL == 'net':
+            model = Model.Net(num_classes)
+        elif CONFIG_MODEL == 'alexnet':
+            model = Model.AlexNet(num_classes)
         else:
             raise ValueError('Model not found')
 
@@ -148,77 +152,118 @@ class Model:
         CONFIG_LEARNING_RATE = CONFIG['runtime']['learning_rate']
         return tf.optim.Adam(model.parameters(), lr=CONFIG_LEARNING_RATE)
 
-    class Model1(nn.Module):
+    class VGG(nn.Module):
         def __init__(self, num_classes):
-            super().__init__()
+            super(Model.VGG, self).__init__()
+            self.features = nn.Sequential(
+                nn.Conv2d(1, 64, 3, 1, 1),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(2, 2),
+                nn.Conv2d(64, 128, 3, 1, 1),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(2, 2),
+                nn.Conv2d(128, 256, 3, 1, 1),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(256, 256, 3, 1, 1),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(2, 2),
+                nn.Conv2d(256, 512, 3, 1, 1),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(512, 512, 3, 1, 1),
+                nn.ReLU(inplace=True),
+                nn.AdaptiveMaxPool2d((4, 6)))
+            self.embeddings = nn.Sequential(
+                nn.Linear(512 * 24, 4096),
+                nn.ReLU(inplace=True),
+                nn.Linear(4096, 4096),
+                nn.ReLU(inplace=True),
+                nn.Linear(4096, 128),
+                nn.ReLU(inplace=True))
+            self.head = nn.Linear(128, num_classes)
 
-            self.conv1 = nn.Sequential(
-                nn.Conv2d(
-                    in_channels=1,
-                    out_channels=16,
-                    kernel_size=3,
-                    stride=1,
-                    padding=2
-                ),
-                nn.ReLU(),
-                nn.MaxPool2d(kernel_size=2)
-            )
+        def forward(self, x):
+            x = self.features(x)
+            x = x.view(x.size(0), -1)
+            x = self.embeddings(x)
+            x = self.head(x)
+            return x
 
-            self.conv2 = nn.Sequential(
-                nn.Conv2d(
-                    in_channels=16,
-                    out_channels=32,
-                    kernel_size=3,
-                    stride=1,
-                    padding=2
-                ),
-                nn.ReLU(),
-                nn.MaxPool2d(kernel_size=2)
-            )
+    class Net(nn.Module):
+        def __init__(self, n_classes):
+            super(Model.Net, self).__init__()
+            self.conv1 = nn.Conv2d(1, 32, 3, 1)
+            self.conv2 = nn.Conv2d(32, 64, 3, 1)
+            self.conv3 = nn.Conv2d(64, 128, 3, 1)
+            self.conv4 = nn.Conv2d(128, 256, 3, 1)
+            self.dropout1 = nn.Dropout(0.25)
+            self.dropout2 = nn.Dropout(0.5)
+            self.pooling = nn.AdaptiveAvgPool2d((8, 8))  # extended
+            self.fc1 = nn.Linear(16384, 128)
+            self.fc2 = nn.Linear(128, n_classes)
 
-            self.conv3 = nn.Sequential(
-                nn.Conv2d(
-                    in_channels=32,
-                    out_channels=64,
-                    kernel_size=3,
-                    stride=1,
-                    padding=2
-                ),
-                nn.ReLU(),
-                nn.MaxPool2d(kernel_size=2)
-            )
-
-            self.conv4 = nn.Sequential(
-                nn.Conv2d(
-                    in_channels=64,
-                    out_channels=128,
-                    kernel_size=3,
-                    stride=1,
-                    padding=2
-                ),
-                nn.ReLU(),
-                nn.MaxPool2d(kernel_size=2)
-            )
-
-            self.flatten = nn.Flatten()
-            self.linear = nn.Linear(2304, num_classes)
-            self.softmax = nn.Softmax(dim=1)
-
-        def forward(self, data):
-            x = self.conv1(data)
+        def forward(self, x):
+            x = self.conv1(x)
+            x = nn.functional.relu(x)
             x = self.conv2(x)
+            x = nn.functional.relu(x)
+            x = nn.functional.max_pool2d(x, 2)
+            x = self.dropout1(x)
+
             x = self.conv3(x)
+            x = nn.functional.relu(x)
             x = self.conv4(x)
-            x = self.flatten(x)
-            logits = self.linear(x)
-            predictions = self.softmax(logits)
-            return predictions
+            x = nn.functional.relu(x)
+            x = nn.functional.max_pool2d(x, 2)
+            x = self.dropout1(x)
+            x = self.pooling(x)
 
-    class Model2(nn.Module):
-        pass
+            x = tf.flatten(x, 1)
+            x = self.fc1(x)
+            x = nn.functional.relu(x)
+            x = self.dropout2(x)
+            x = self.fc2(x)
+            return x
 
-    class Model3(nn.Module):
-        pass
+    class AlexNet(nn.Module):
+        def __init__(self, num_classes):
+            super(Model.AlexNet, self).__init__()
+            self.features = nn.Sequential(
+                nn.Conv2d(1, 64, kernel_size=5, stride=1, padding=2),
+                nn.BatchNorm2d(64),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(kernel_size=3, stride=2),
+                nn.Conv2d(64, 192, kernel_size=5, padding=2),
+                nn.BatchNorm2d(192),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(kernel_size=3, stride=2),
+                nn.Conv2d(192, 384, kernel_size=3, padding=1),
+                nn.BatchNorm2d(384),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(384, 256, kernel_size=3, padding=1),
+                nn.BatchNorm2d(256),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(256, 256, kernel_size=3, padding=1),
+                nn.BatchNorm2d(256),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(kernel_size=3, stride=2),
+            )
+            self.avgpool = nn.AdaptiveAvgPool2d((4, 6))
+            self.classifier = nn.Sequential(
+                nn.Dropout(),
+                nn.Linear(256 * 4 * 6, 4096),
+                nn.ReLU(inplace=True),
+                nn.Dropout(),
+                nn.Linear(4096, 4096),
+                nn.ReLU(inplace=True),
+                nn.Linear(4096, num_classes),
+            )
+
+        def forward(self, x):
+            x = self.features(x)
+            x = self.avgpool(x)
+            x = tf.flatten(x, 1)
+            x = self.classifier(x)
+            return x
 
 
 class AudioCNNClassifier:

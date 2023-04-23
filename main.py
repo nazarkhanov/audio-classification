@@ -33,22 +33,40 @@ class Device:
 
 class Dataset(tf.utils.data.Dataset):
     @staticmethod
-    def load():
+    def read_annotations():
         global CONFIG
         CONFIG_TRAIN = CONFIG['dataset']['annotations']['train_csv']
         CONFIG_TEST = CONFIG['dataset']['annotations']['test_csv']
 
-        return Dataset.build(CONFIG_TRAIN), Dataset.build(CONFIG_TEST)
+        train_annotations = pd.read_csv(CONFIG_TRAIN)
+        test_annotations = pd.read_csv(CONFIG_TEST)
+
+        return train_annotations, test_annotations
 
     @staticmethod
-    def build(path):
+    def load_batches(annotations):
         global CONFIG
         CONFIG_KWARGS = CONFIG['runtime']['loader']
 
-        annotations = pd.read_csv(path)
-        dataset = Dataset(annotations)
+        train_annotations, test_annotations = annotations
 
-        return tf.utils.data.DataLoader(dataset, **CONFIG_KWARGS)
+        train_dataset = Dataset(train_annotations)
+        train_batches = tf.utils.data.DataLoader(train_dataset, **CONFIG_KWARGS)
+
+        test_dataset = Dataset(train_annotations)
+        test_batches = tf.utils.data.DataLoader(test_dataset, **CONFIG_KWARGS)
+
+        return train_batches, test_batches
+
+    @staticmethod
+    def count_classes(annotations):
+        global CONFIG
+        CONFIG_TARGET_COL = CONFIG['dataset']['annotations']['target']
+
+        train_annotations, test_annotations = annotations
+        df = pd.concat([train_annotations, test_annotations]).nunique()
+
+        return df[CONFIG_TARGET_COL]
 
     def __init__(self, annotations):
         self.annotations = annotations
@@ -109,12 +127,12 @@ class Dataset(tf.utils.data.Dataset):
 
 class Model:
     @staticmethod
-    def use():
+    def init(num_classes):
         global CONFIG
         CONFIG_MODEL = CONFIG['runtime']['model']['name']
 
         if CONFIG_MODEL == 'custom':
-            model = Model.Model1()
+            model = Model.Model1(num_classes)
         else:
             raise ValueError('Model not found')
 
@@ -131,7 +149,7 @@ class Model:
         return tf.optim.Adam(model.parameters(), lr=CONFIG_LEARNING_RATE)
 
     class Model1(nn.Module):
-        def __init__(self):
+        def __init__(self, num_classes):
             super().__init__()
 
             self.conv1 = nn.Sequential(
@@ -183,7 +201,7 @@ class Model:
             )
 
             self.flatten = nn.Flatten()
-            self.linear = nn.Linear(2304, 10)
+            self.linear = nn.Linear(2304, num_classes)
             self.softmax = nn.Softmax(dim=1)
 
         def forward(self, data):
@@ -212,11 +230,13 @@ class AudioCNNClassifier:
 
         print(f'Device: {DEVICE.upper()}')
 
-        model_obj = Model.use().to(DEVICE)
+        annotations = Dataset.read_annotations()
+        train_batches, test_batches = Dataset.load_batches(annotations)
+        num_classes = Dataset.count_classes(annotations)
+
+        model_obj = Model.init(num_classes).to(DEVICE)
         loss_fn = Model.loss()
         optimiser = Model.optimizer(model_obj)
-
-        train_batches, test_batches = Dataset.load()
 
         AudioCNNClassifier.train_all_epochs(model_obj, loss_fn, optimiser, train_batches)
 

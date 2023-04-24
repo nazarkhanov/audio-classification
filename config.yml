@@ -12,8 +12,8 @@ dataset:
     duration: 1
 
 runtime:
-  device: cpu
-  epochs: 100
+  device: auto # auto | cpu | cuda
+  epochs: 32
   learning_rate: 0.001
 
   loader:
@@ -28,5 +28,5 @@ runtime:
       hop_length: 512
 
   model:
-    name: vgg # vgg | net | alexnet
+    name: alexnet # vgg | net | alexnet
     params: null

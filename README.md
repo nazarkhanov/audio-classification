@@ -1,5 +1,12 @@
 # Torch Audio CNN Classifier
 
+### Train & test
+
+```sh
+python main.py
+```
+
+
 ### Train
 
 ```sh

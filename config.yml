@@ -12,7 +12,7 @@ dataset:
     duration: 1
 
 model:
-  device: gpu # auto | cpu | cuda
+  device: cuda # auto | cpu | cuda
   name: vgg # vgg | net | alexnet
   folder_path: temp/
 

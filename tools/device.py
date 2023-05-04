@@ -5,7 +5,7 @@ import tools.globals as g
 class Device:
     @staticmethod
     def choose():
-        CONFIG_DEVICE = g.CONFIG['runtime'].get('device', None)
+        CONFIG_DEVICE = g.CONFIG['model'].get('device', None)
 
         if CONFIG_DEVICE != 'auto':
             return CONFIG_DEVICE

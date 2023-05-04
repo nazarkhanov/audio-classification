@@ -11,10 +11,14 @@ dataset:
     sample_rate: 8000
     duration: 1
 
-runtime:
-  device: auto # auto | cpu | cuda
-  epochs: 32
-  learning_rate: 0.001
+model:
+  device: gpu # auto | cpu | cuda
+  name: vgg # vgg | net | alexnet
+  folder_path: temp/
+
+  trainer:
+    epochs: 1
+    learning_rate: 0.001
 
   loader:
     batch_size: 64
@@ -26,7 +30,3 @@ runtime:
       n_fft: 1024
       win_length: 512
       hop_length: 512
-
-  model:
-    name: vgg # vgg | net | alexnet
-    params: null

@@ -19,14 +19,14 @@ class Dataset(tf.utils.data.Dataset):
 
     @staticmethod
     def load_batches(annotations):
-        CONFIG_KWARGS = g.CONFIG['runtime']['loader']
+        CONFIG_KWARGS = g.CONFIG['model']['loader']
 
         train_annotations, test_annotations = annotations
 
         train_dataset = Dataset(train_annotations)
         train_batches = tf.utils.data.DataLoader(train_dataset, **CONFIG_KWARGS)
 
-        test_dataset = Dataset(train_annotations)
+        test_dataset = Dataset(test_annotations)
         test_batches = tf.utils.data.DataLoader(test_dataset, **CONFIG_KWARGS)
 
         return train_batches, test_batches
@@ -76,8 +76,8 @@ class Dataset(tf.utils.data.Dataset):
 
     @staticmethod
     def transform(signal, sr):
-        CONFIG_TRANSFORM = g.CONFIG['runtime']['transform']['name']
-        CONFIG_KWARGS = g.CONFIG['runtime']['transform']['params'] or {}
+        CONFIG_TRANSFORM = g.CONFIG['model']['transform']['name']
+        CONFIG_KWARGS = g.CONFIG['model']['transform'].get('params', {}) or {}
 
         if CONFIG_TRANSFORM == 'mel':
             if (g.TRANSFORM is None) or (type(g.TRANSFORM) is not ta.transforms.MelSpectrogram):

@@ -9,7 +9,7 @@ from models.alexnet import AlexNet
 class Model:
     @staticmethod
     def init(num_classes):
-        CONFIG_MODEL = g.CONFIG['runtime']['model']['name']
+        CONFIG_MODEL = g.CONFIG['model']['name']
 
         if CONFIG_MODEL == 'vgg':
             model = VGG(num_classes)
@@ -28,5 +28,5 @@ class Model:
 
     @staticmethod
     def optimizer(model):
-        CONFIG_LEARNING_RATE = g.CONFIG['runtime']['learning_rate']
+        CONFIG_LEARNING_RATE = g.CONFIG['model']['trainer']['learning_rate']
         return tf.optim.Adam(model.parameters(), lr=CONFIG_LEARNING_RATE)

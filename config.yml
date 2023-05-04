@@ -17,7 +17,7 @@ model:
   folder_path: temp/
 
   trainer:
-    epochs: 1
+    epochs: 32
     learning_rate: 0.001
 
   loader:

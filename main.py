@@ -73,7 +73,12 @@ class Main:
         path = g.CONFIG['model']['folder_path']
         pathlib.Path(path).mkdir(parents=True, exist_ok=True)
         path = str(pathlib.PurePath(path, 'audio.pth'))
-        model_obj.load_state_dict(tf.load(path))
+
+        try:
+            model_obj.load_state_dict(tf.load(path))
+        except Exception as e:
+            print('Failed to load pretrained model')
+            exit()
 
         model_obj.eval()
 
@@ -101,10 +106,18 @@ class Main:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('action', type=str, help='train | test')
+    parser.add_argument('action', type=str, help='train | test', nargs='?', default='default')
     args = parser.parse_args()
 
     if args.action == 'train':
+        print('Running training...')
         Main.train()
     elif args.action == 'test':
+        print('Running validating...')
+        Main.test()
+    else:
+        print('Running default flow...')
+        print('Training...')
+        Main.train()
+        print('Validating...')
         Main.test()
